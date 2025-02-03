@@ -17,7 +17,7 @@ function NanoUI.New()
     instance = {
         Windows = {},
         NewWindow = function(self, config)
-            local window = WindowModule.New(ScreenGui, config)
+            local window = WindowModule.New(config)
             table.insert(self.Windows, window)
             return window
         end,
