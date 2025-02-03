@@ -49,8 +49,8 @@ function NanoUI.New()
 end
 
 -- API Exposure
-function NanoUI.NewWindow(config)
-    local window = WindowModule.Neww(config)  -- Set ScreenGui as the parent
+function NanoUI.NewWindow(parent, config)
+    local window = WindowModule.Neww(ScreenGui, config)  -- Set ScreenGui as the parent
     table.insert(instance.Windows, window)
     return window
 end
@@ -60,9 +60,9 @@ function NanoUI.SetTheme(theme)
 end
 
 -- Window Class (Assuming WindowModule has these methods)
-function WindowModule.New(config)
+function WindowModule.New(parent, config)
     local window = {
-        Title = config.Title or "Untitled Window",
+        Name = config.Title or "Untitled Window",
         Size = config.Size or {Width = 400, Height = 300},
         Elements = {}
     }
