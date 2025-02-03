@@ -20,14 +20,27 @@ local ThemeManager = safeLoadModule("https://raw.githubusercontent.com/Nanonite-
 local instance = nil
 function NanoUI.New(parent, config)
     if instance then return instance end
+
+    -- Use the provided parent or create a default ScreenGui
+    local screenGui = parent or Instance.new("ScreenGui")
+    screenGui.Name = config.Title or "NanoUIScreen"
+    screenGui.DisplayOrder = config.DisplayOrder or 1
+    screenGui.ResetOnSpawn = config.ResetOnSpawn or false
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
     instance = {
         Windows = {},
-        NewWindow = function(self, config)
+        ScreenGui = screenGui,
+        NewWindow = function(self, windowConfig)
             if not WindowModule then
                 print("WindowModule is not loaded.")
                 return nil
             end
-            local window = WindowModule.New(parent, config)
+            local window = WindowModule.New(self.ScreenGui, windowConfig)
+            if not window then
+                print("Failed to create window.")
+                return nil
+            end
             table.insert(self.Windows, window)
             return window
         end,
