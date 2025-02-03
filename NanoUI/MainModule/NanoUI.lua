@@ -21,6 +21,7 @@ local instance = nil
 function NanoUI.New(parent, config)
     if instance then return instance end
 
+    print("NanoUI")
     -- Use the provided parent or create a default ScreenGui
     local screenGui = parent or Instance.new("ScreenGui")
     screenGui.Name = config.Title or "NanoUIScreen"

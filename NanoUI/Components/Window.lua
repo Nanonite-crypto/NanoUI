@@ -15,6 +15,7 @@ WindowModule.__index = WindowModule
 function WindowModule.New(parent, config)
     local self = setmetatable({}, WindowModule)
     
+    print("Window")
     -- Use the config parameter to set window properties
     self.Title = config.Title or "Untitled Window"
     self.Size = config.Size or {Width = 400, Height = 300}
