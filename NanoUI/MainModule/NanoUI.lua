@@ -485,6 +485,7 @@ function NanoUI:Reopen()
         self.WindowState = "open"
         local tween = TweenService:Create(self.Window, self.AnimationConfig.maximize, {BackgroundTransparency = 0})
         tween:Play()
+        print("Trying to reopen the window..")
     end
 end
 
