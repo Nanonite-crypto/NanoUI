@@ -1,8 +1,20 @@
 local NanoUI = {}
-local WindowModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Window.lua"))()
-local ButtonModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Button.lua"))()
-local ToggleModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Toggle.lua"))()
-local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Themes/ThemeManager.lua"))()
+
+local function safeLoadModule(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        print("Error loading module from URL:", url, "\nError:", result)
+        return nil
+    end
+    return result
+end
+
+local WindowModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Window.lua")
+local ButtonModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Button.lua")
+local ToggleModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Toggle.lua")
+local ThemeManager = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Themes/ThemeManager.lua")
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NanoUIScreen"
@@ -17,11 +29,19 @@ function NanoUI.New()
     instance = {
         Windows = {},
         NewWindow = function(self, config)
-            local window = WindowModule.New(config)
+            if not WindowModule then
+                print("WindowModule is not loaded.")
+                return nil
+            end
+            local window = WindowModule.New(ScreenGui, config)
             table.insert(self.Windows, window)
             return window
         end,
         SetTheme = function(self, theme)
+            if not ThemeManager then
+                print("ThemeManager is not loaded.")
+                return
+            end
             ThemeManager.Apply(theme)
         end
     }
