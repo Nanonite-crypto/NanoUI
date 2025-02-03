@@ -143,6 +143,8 @@ function NanoUI.new(config)
             print("KEY: ", self.ReopenKeyCode)
             if self.WindowState == "closed" then
                 self:Reopen()
+            else
+                self:Close()
             end
         end
     end)
