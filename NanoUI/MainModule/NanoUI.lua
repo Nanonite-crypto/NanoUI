@@ -1,4 +1,4 @@
--- NanoUI - A simple custom UI library inspired by Rayfield
+-- NanoUI - A custom UI library inspired by Rayfield with customizable header buttons
 -- Author: YourNameHere
 -- Date: YYYY-MM-DD
 
@@ -17,12 +17,18 @@ function NanoUI.new(config)
     
     -- Default Animation Configuration (can be overridden via config.AnimationConfig)
     local defaultAnimations = {
-        close = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
-        minimize = TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.In),
-        maximize = TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+        close = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        minimize = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In),
+        maximize = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
     }
     self.AnimationConfig = config.AnimationConfig or defaultAnimations
 
+    -- Default Reopen key (if window is closed, press this key to bring it back)
+    self.ReopenKey = config.ReopenKey or "N"
+    self.ReopenKeyCode = Enum.KeyCode[self.ReopenKey] or Enum.KeyCode.N
+
+    self.WindowState = "open" -- possible states: "open", "minimized", "closed"
+    
     -- Create the ScreenGui (parented to CoreGui if not in Studio)
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = config.Name or "NanoUI_Window"
@@ -59,38 +65,83 @@ function NanoUI.new(config)
     titleLabel.TextColor3 = config.TextColor or Color3.new(1, 1, 1)
     titleLabel.Parent = topbar
 
-    -- Container for the tabs (left side)
-    local tabContainer = Instance.new("Frame")
-    tabContainer.Name = "TabContainer"
-    tabContainer.Size = UDim2.new(0, 150, 1, -40)
-    tabContainer.Position = UDim2.new(0, 0, 0, 40)
-    tabContainer.BackgroundColor3 = config.TabContainerColor or Color3.fromRGB(35, 35, 35)
-    tabContainer.BorderSizePixel = 0
-    tabContainer.Parent = window
+    ------------------------------
+    -- Create Customizable Header Buttons
+    ------------------------------
+    self.HeaderButtons = {}
+    local headerConfig = config.HeaderButtons or {}
+    local defaultClose = {
+        Type = "Text",
+        Text = "X",
+        Color = Color3.new(1, 0, 0),
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -35, 0, 5),
+        Font = Enum.Font.SourceSansBold,
+        TextScaled = true,
+    }
+    local defaultMinimize = {
+        Type = "Text",
+        Text = "-",
+        Color = Color3.new(1, 1, 1),
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -70, 0, 5),
+        Font = Enum.Font.SourceSansBold,
+        TextScaled = true,
+    }
+    local closeSettings = headerConfig.close or defaultClose
+    local minimizeSettings = headerConfig.minimize or defaultMinimize
 
-    -- Container for tab content (right side)
-    local contentContainer = Instance.new("Frame")
-    contentContainer.Name = "ContentContainer"
-    contentContainer.Size = UDim2.new(1, -150, 1, -40)
-    contentContainer.Position = UDim2.new(0, 150, 0, 40)
-    contentContainer.BackgroundColor3 = config.ContentColor or Color3.fromRGB(25, 25, 25)
-    contentContainer.BorderSizePixel = 0
-    contentContainer.Parent = window
+    local function createButton(settings)
+        if settings.Type == "Image" then
+            local btn = Instance.new("ImageButton")
+            btn.Name = settings.Name or "HeaderButton"
+            btn.Size = settings.Size or defaultClose.Size
+            btn.Position = settings.Position or UDim2.new(1, 0, 0, 0)
+            btn.BackgroundTransparency = 1
+            btn.Image = settings.Image or ""
+            return btn
+        else
+            local btn = Instance.new("TextButton")
+            btn.Name = settings.Name or "HeaderButton"
+            btn.Size = settings.Size or UDim2.new(0, 30, 0, 30)
+            btn.Position = settings.Position or UDim2.new(1, 0, 0, 0)
+            btn.BackgroundTransparency = 1
+            btn.Text = settings.Text or ""
+            btn.TextColor3 = settings.Color or Color3.new(1, 1, 1)
+            btn.Font = settings.Font or Enum.Font.SourceSansBold
+            btn.TextScaled = settings.TextScaled == nil and true or settings.TextScaled
+            return btn
+        end
+    end
 
-    self.Window = window
-    self.TabContainer = tabContainer
-    self.ContentContainer = contentContainer
-    self.Tabs = {}   -- table to store custom tabs
-    self.CurrentTab = nil
+    -- Create Close Button
+    local closeButton = createButton(closeSettings)
+    closeButton.Parent = topbar
+    closeButton.MouseButton1Click:Connect(function()
+        self:Close()
+    end)
+    self.CloseButton = closeButton
 
-    -- For minimize/restore animations, store full window size and position.
-    self.FullSize = window.Size
-    self.FullPosition = window.Position
-    self.Minimized = false
+    -- Create Minimize Button
+    local minimizeButton = createButton(minimizeSettings)
+    minimizeButton.Parent = topbar
+    minimizeButton.MouseButton1Click:Connect(function()
+        self:ToggleMinimize()
+    end)
+    self.MinimizeButton = minimizeButton
 
-    ---------------
+    -- Bind input for reopening the window if closed (default key "N")
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if not processed and input.KeyCode == self.ReopenKeyCode then
+            if self.WindowState == "closed" then
+                self:Reopen()
+            end
+        end
+    end)
+
+    ------------------------------
     -- Dragging
-    ---------------
+    ------------------------------
     local dragging = false
     local dragInput, dragStart, startPos
 
@@ -118,6 +169,36 @@ function NanoUI.new(config)
             window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
+
+    ------------------------------
+    -- Create Tab and Content Containers
+    ------------------------------
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Name = "TabContainer"
+    tabContainer.Size = UDim2.new(0, 150, 1, -40)
+    tabContainer.Position = UDim2.new(0, 0, 0, 40)
+    tabContainer.BackgroundColor3 = config.TabContainerColor or Color3.fromRGB(35, 35, 35)
+    tabContainer.BorderSizePixel = 0
+    tabContainer.Parent = window
+
+    local contentContainer = Instance.new("Frame")
+    contentContainer.Name = "ContentContainer"
+    contentContainer.Size = UDim2.new(1, -150, 1, -40)
+    contentContainer.Position = UDim2.new(0, 150, 0, 40)
+    contentContainer.BackgroundColor3 = config.ContentColor or Color3.fromRGB(25, 25, 25)
+    contentContainer.BorderSizePixel = 0
+    contentContainer.Parent = window
+
+    self.Window = window
+    self.TabContainer = tabContainer
+    self.ContentContainer = contentContainer
+    self.Tabs = {}   -- table to store custom tabs
+    self.CurrentTab = nil
+
+    -- For minimize/restore animations, store full window size and position.
+    self.FullSize = window.Size
+    self.FullPosition = window.Position
+    self.Minimized = false
 
     return self
 end
@@ -394,6 +475,16 @@ function NanoUI:ToggleMinimize()
             self.ContentContainer.Visible = false
             self.Minimized = true
         end)
+    end
+end
+
+-- Reopen the window if it was closed.
+function NanoUI:Reopen()
+    if self.WindowState == "closed" then
+        self.Window.Visible = true
+        self.WindowState = "open"
+        local tween = TweenService:Create(self.Window, self.AnimationConfig.maximize, {BackgroundTransparency = 0})
+        tween:Play()
     end
 end
 
