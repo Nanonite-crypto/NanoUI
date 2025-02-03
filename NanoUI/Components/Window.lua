@@ -12,6 +12,8 @@ end
 local WindowModule = {}
 WindowModule.__index = WindowModule
 
+print("Ye")
+
 function WindowModule.New(parent, config)
     local self = setmetatable({}, WindowModule)
     
@@ -25,6 +27,7 @@ function WindowModule.New(parent, config)
     -- Initialize the window UI here, using self.Parent as the parent
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, self.Size.Width, 0, self.Size.Height)
+    frame.Position = UDim2.new(0.5, -self.Size.Width/2, 0.5, -self.Size.Height/2) -- Center the frame
     frame.Parent = self.Parent
     
     -- Store the frame in the window object for further manipulation
@@ -38,6 +41,7 @@ function WindowModule:AddButton(text, callback)
     local button = Instance.new("TextButton")
     button.Text = text
     button.Size = UDim2.new(0, 100, 0, 50) -- Example size
+    button.Position = UDim2.new(0, 10, 0, 10 + #self.Elements * 60) -- Stack buttons vertically
     button.Parent = self.Frame
     button.MouseButton1Click:Connect(callback)
     table.insert(self.Elements, button)
@@ -49,6 +53,7 @@ function WindowModule:AddToggle(text, defaultState, callback)
     local toggle = Instance.new("TextButton")
     toggle.Text = text
     toggle.Size = UDim2.new(0, 100, 0, 50) -- Example size
+    toggle.Position = UDim2.new(0, 10, 0, 10 + #self.Elements * 60) -- Stack toggles vertically
     toggle.Parent = self.Frame
     toggle.MouseButton1Click:Connect(function()
         defaultState = not defaultState
