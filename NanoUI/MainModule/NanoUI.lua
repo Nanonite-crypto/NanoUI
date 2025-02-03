@@ -2,6 +2,10 @@
 -- Author: YourNameHere
 -- Date: YYYY-MM-DD
 
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
 local NanoUI = {}
 NanoUI.__index = NanoUI
 
@@ -11,6 +15,14 @@ function NanoUI.new(config)
     
     local self = setmetatable({}, NanoUI)
     
+    -- Default Animation Configuration (can be overridden via config.AnimationConfig)
+    local defaultAnimations = {
+        close = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
+        minimize = TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.In),
+        maximize = TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+    }
+    self.AnimationConfig = config.AnimationConfig or defaultAnimations
+
     -- Create the ScreenGui (parented to CoreGui if not in Studio)
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = config.Name or "NanoUI_Window"
@@ -70,6 +82,42 @@ function NanoUI.new(config)
     self.ContentContainer = contentContainer
     self.Tabs = {}   -- table to store custom tabs
     self.CurrentTab = nil
+
+    -- For minimize/restore animations, store full window size and position.
+    self.FullSize = window.Size
+    self.FullPosition = window.Position
+    self.Minimized = false
+
+    ---------------
+    -- Dragging
+    ---------------
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = window.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    topbar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 
     return self
 end
@@ -305,6 +353,48 @@ function NanoUI:CreateSection(tab, config)
 
     table.insert(tab.Elements, sectionFrame)
     return sectionFrame
+end
+
+-- Closes the window with a closing tween
+function NanoUI:Close()
+    if not self.Window then return end
+    local tween = TweenService:Create(self.Window, self.AnimationConfig.close, {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(self.Window.Position.X.Scale, self.Window.Position.X.Offset, 1, 0)
+    })
+    tween:Play()
+    tween.Completed:Connect(function()
+        self.Window:Destroy()
+    end)
+end
+
+-- Toggles between minimized and maximized states.
+function NanoUI:ToggleMinimize()
+    if not self.Window then return end
+    if self.Minimized then
+        -- Restore window size and position (maximize)
+        self.ContentContainer.Visible = true
+        local tween = TweenService:Create(self.Window, self.AnimationConfig.maximize, {
+            Size = self.FullSize,
+            Position = self.FullPosition
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+            self.Minimized = false
+        end)
+    else
+        -- Store the current full size/position then minimize.
+        self.FullSize = self.Window.Size
+        self.FullPosition = self.Window.Position
+        local tween = TweenService:Create(self.Window, self.AnimationConfig.minimize, {
+            Size = UDim2.new(self.Window.Size.X.Scale, self.Window.Size.X.Offset, 0, 40)
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+            self.ContentContainer.Visible = false
+            self.Minimized = true
+        end)
+    end
 end
 
 return NanoUI
