@@ -1,3 +1,15 @@
+
+local function safeLoadModule(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        print("Error loading module from URL:", url, "\nError:", result)
+        return nil
+    end
+    return result
+end
+
 local Window = {}
 Window.__index = Window
 
@@ -31,12 +43,12 @@ function Window.New(parent, config)
 end
 
 function Window:AddButton(text, callback)
-    local ButtonModule = require(script.Parent.Button)
+    local ButtonModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Button.lua")
     ButtonModule.Create(self.Frame, text, callback)
 end
 
 function Window:AddToggle(text, defaultState, callback)
-    local ToggleModule = require(script.Parent.Toggle)
+    local ToggleModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Toggle.lua")
     ToggleModule.Create(self.Frame, text, defaultState, callback)
 end
 
