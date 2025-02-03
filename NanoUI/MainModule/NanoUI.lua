@@ -15,7 +15,15 @@ local instance = nil
 function NanoUI.New()
     if instance then return instance end
     instance = {
-        Windows = {}
+        Windows = {},
+        NewWindow = function(self, config)
+            local window = WindowModule.New(ScreenGui, config)
+            table.insert(self.Windows, window)
+            return window
+        end,
+        SetTheme = function(self, theme)
+            ThemeManager.Apply(theme)
+        end
     }
     return instance
 end
