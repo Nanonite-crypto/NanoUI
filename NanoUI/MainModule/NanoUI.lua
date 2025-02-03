@@ -132,7 +132,12 @@ function NanoUI.new(config)
 
     -- Bind input for reopening the window if closed (default key "N")
     UserInputService.InputBegan:Connect(function(input, processed)
+        --print("KEY PROCESSED: ", processed)
+        --print("KEY PRESSED: ", input.KeyCode)
+        --print("WINDOW STATE BEFORE: ", self.WindowState)
         if not processed and input.KeyCode == self.ReopenKeyCode then
+            print("WINDOW STATE NOW: ", self.WindowState)
+            print("KEY: ", self.ReopenKeyCode)
             if self.WindowState == "closed" then
                 self:Reopen()
             end
@@ -439,10 +444,13 @@ end
 -- Closes the window with a closing tween
 function NanoUI:Close()
     if not self.Window then return end
+    print("CLOSING WINDOW...")
     local tween = TweenService:Create(self.Window, self.AnimationConfig.close, {
         BackgroundTransparency = 1,
         Position = UDim2.new(self.Window.Position.X.Scale, self.Window.Position.X.Offset, 1, 0)
     })
+    self.WindowState = "closed"
+    print("GUI STATE: ", self.WindowState)
     tween:Play()
     --[[tween.Completed:Connect(function()
         self.Window:Destroy()
@@ -480,12 +488,15 @@ end
 
 -- Reopen the window if it was closed.
 function NanoUI:Reopen()
+    --print("WINDOW_STATE: ", self.WindowState)
     if self.WindowState == "closed" then
         self.Window.Visible = true
         self.WindowState = "open"
+        --rint("Trying to reopen the window..")
         local tween = TweenService:Create(self.Window, self.AnimationConfig.maximize, {BackgroundTransparency = 0})
+        --print("almost")
         tween:Play()
-        print("Trying to reopen the window..")
+        --print("Done.")
     end
 end
 
