@@ -1,105 +1,90 @@
-local NanoUI = {}
+-- Core.lua
+local Rayfield = {Windows = {}}
 
-local function safeLoadModule(url)
-    local success, result = pcall(function()
-        return loadstring(game:HttpGet(url))()
-    end)
-    if not success then
-        print("Error loading module from URL:", url, "\nError:", result)
-        return nil
-    end
-    return result
-end
-
-local WindowModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Window.lua")
-local ButtonModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Button.lua")
-local ToggleModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Toggle.lua")
-local ThemeManager = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Themes/ThemeManager.lua")
-
--- Singleton pattern for NanoUI
-local instance = nil
-function NanoUI.New(parent, config)
-    if instance then return instance end
-
-    print("NANO")
-
-    -- Use the provided parent or create a default ScreenGui
-    local screenGui = parent or Instance.new("ScreenGui")
-    screenGui.Name = config.Title or "NanoUIScreen"
-    screenGui.DisplayOrder = config.DisplayOrder or 1
-    screenGui.ResetOnSpawn = config.ResetOnSpawn or false
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-    instance = {
-        Windows = {},
-        ScreenGui = screenGui,
-        CreateWindow = function(self, windowConfig)
-            if not WindowModule then
-                print("WindowModule is not loaded.")
-                return nil
-            end
-            local window = WindowModule.New(self.ScreenGui, windowConfig)
-            if not window then
-                print("Failed to create window.")
-                return nil
-            end
-            table.insert(self.Windows, window)
-            return window
-        end,
-        SetTheme = function(self, theme)
-            if not ThemeManager then
-                print("ThemeManager is not loaded.")
-                return
-            end
-            ThemeManager.Apply(theme)
+function Rayfield:CreateWindow(options)
+    local Window = {Elements = {}}
+    options = options or {}
+    
+    -- Create main GUI container
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "RayfieldUI"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    -- Main window frame
+    local WindowFrame = Instance.new("Frame")
+    WindowFrame.Name = "Window"
+    WindowFrame.Size = UDim2.new(0, 500, 0, 400)
+    WindowFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+    WindowFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    WindowFrame.Parent = ScreenGui
+    
+    -- Window title
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Text = options.Name or "Window"
+    Title.Size = UDim2.new(1, 0, 0, 40)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextColor3 = Color3.new(1, 1, 1)
+    Title.BackgroundTransparency = 1
+    Title.Parent = WindowFrame
+    
+    -- Elements container
+    local ElementsList = Instance.new("UIListLayout")
+    ElementsList.Parent = WindowFrame
+    ElementsList.Padding = UDim.new(0, 10)
+    
+    function Window:CreateButton(options)
+        local Button = {Name = options.Name or "Button"}
+        
+        local ButtonFrame = Instance.new("TextButton")
+        ButtonFrame.Name = "Button"
+        ButtonFrame.Size = UDim2.new(1, -40, 0, 40)
+        ButtonFrame.Position = UDim2.new(0, 20, 0, 50)
+        ButtonFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        ButtonFrame.Font = Enum.Font.Gotham
+        ButtonFrame.TextColor3 = Color3.new(1, 1, 1)
+        ButtonFrame.Text = options.Name or "Button"
+        ButtonFrame.Parent = WindowFrame
+        
+        if options.Callback then
+            ButtonFrame.MouseButton1Click:Connect(options.Callback)
         end
-    }
-    return instance
+        
+        table.insert(self.Elements, Button)
+        return Button
+    end
+    
+    function Window:CreateToggle(options)
+        local Toggle = {Value = options.Default or false}
+        
+        local ToggleFrame = Instance.new("TextButton")
+        ToggleFrame.Name = "Toggle"
+        ToggleFrame.Size = UDim2.new(1, -40, 0, 40)
+        ToggleFrame.Position = UDim2.new(0, 20, 0, 100)
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        ToggleFrame.Font = Enum.Font.Gotham
+        ToggleFrame.Text = (options.Name or "Toggle") .. ": Off"
+        ToggleFrame.TextColor3 = Color3.new(1, 1, 1)
+        ToggleFrame.Parent = WindowFrame
+        
+        local function UpdateToggle()
+            Toggle.Value = not Toggle.Value
+            ToggleFrame.Text = (options.Name or "Toggle") .. (Toggle.Value and ": On" or ": Off")
+            if options.Callback then
+                options.Callback(Toggle.Value)
+            end
+        end
+        
+        ToggleFrame.MouseButton1Click:Connect(UpdateToggle)
+        
+        table.insert(self.Elements, Toggle)
+        return Toggle
+    end
+    
+    table.insert(self.Windows, Window)
+    return Window
 end
 
--- API Exposure
-function NanoUI.NewWindow(parent, config)
-    local window = WindowModule.New(parent, config)  -- Set ScreenGui as the parent
-    table.insert(instance.Windows, window)
-    return window
+return function()
+    return Rayfield
 end
-
-function NanoUI.SetTheme(theme)
-    ThemeManager.Apply(theme)
-end
-
--- Window Class (Assuming WindowModule has these methods)
-function WindowModule.New(parent, config)
-    local window = {
-        Name = config.Title or "Untitled Window",
-        Size = config.Size or {Width = 400, Height = 300},
-        Elements = {}
-    }
-    return window
-end
-
-function WindowModule:AddButton(text, callback)
-    local button = ButtonModule.Create(text, callback)
-    table.insert(self.Elements, button)
-    return button
-end
-
-function WindowModule:AddToggle(text, defaultState, callback)
-    local toggle = ToggleModule.Create(text, defaultState, callback)
-    table.insert(self.Elements, toggle)
-    return toggle
-end
-
-function WindowModule:Destroy()
-    -- Here you would handle cleaning up all elements of the window
-    print("Destroying window:", self.Title)
-    self.Elements = nil -- In pure Lua, we can't actually destroy objects, so we're just clearing references
-end
-
--- Theme Manager (Assuming ThemeManager has this method)
-function ThemeManager.Apply(theme)
-    -- Here you would apply the theme to all elements or windows
-    print("Applying theme:", theme)
-end
-
-return NanoUI
