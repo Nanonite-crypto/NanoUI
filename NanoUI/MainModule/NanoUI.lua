@@ -16,15 +16,9 @@ local ButtonModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-
 local ToggleModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Toggle.lua")
 local ThemeManager = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Themes/ThemeManager.lua")
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NanoUIScreen"
-ScreenGui.DisplayOrder = 1
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
 -- Singleton pattern for NanoUI
 local instance = nil
-function NanoUI.New()
+function NanoUI.New(parent, config)
     if instance then return instance end
     instance = {
         Windows = {},
@@ -33,7 +27,7 @@ function NanoUI.New()
                 print("WindowModule is not loaded.")
                 return nil
             end
-            local window = WindowModule.New(ScreenGui, config)
+            local window = WindowModule.New(parent, config)
             table.insert(self.Windows, window)
             return window
         end,
@@ -50,7 +44,7 @@ end
 
 -- API Exposure
 function NanoUI.NewWindow(parent, config)
-    local window = WindowModule.Neww(ScreenGui, config)  -- Set ScreenGui as the parent
+    local window = WindowModule.New(parent, config)  -- Set ScreenGui as the parent
     table.insert(instance.Windows, window)
     return window
 end
