@@ -444,9 +444,9 @@ function NanoUI:Close()
         Position = UDim2.new(self.Window.Position.X.Scale, self.Window.Position.X.Offset, 1, 0)
     })
     tween:Play()
-    tween.Completed:Connect(function()
+    --[[tween.Completed:Connect(function()
         self.Window:Destroy()
-    end)
+    end)]]
 end
 
 -- Toggles between minimized and maximized states.
