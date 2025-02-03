@@ -1,4 +1,3 @@
-
 local function safeLoadModule(url)
     local success, result = pcall(function()
         return loadstring(game:HttpGet(url))()
@@ -10,56 +9,61 @@ local function safeLoadModule(url)
     return result
 end
 
-local Window = {}
-Window.__index = Window
+local WindowModule = {}
+WindowModule.__index = WindowModule
 
-function Window.New(parent, config)
-    local self = setmetatable({}, Window)
-    self.Frame = Instance.new("Frame")
-    self.Frame.Parent = parent
-    self.Frame.Size = config.Size or UDim2.new(0, 400, 0, 300)
-    self.Frame.Name = config.Title or "Untitled Window"
+function WindowModule.New(parent, config)
+    local self = setmetatable({}, WindowModule)
     
-    -- Title Bar
-    local titleBar = Instance.new("Frame")
-    titleBar.Parent = self.Frame
-    titleBar.Size = UDim2.new(1, 0, 0, 25)
-    titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    -- Use the config parameter to set window properties
+    self.Title = config.Title or "Untitled Window"
+    self.Size = config.Size or {Width = 400, Height = 300}
+    self.Elements = {}
+    self.Parent = parent
     
-    local titleText = Instance.new("TextLabel")
-    titleText.Parent = titleBar
-    titleText.Text = self.Frame.Name
-    titleText.Size = UDim2.new(1, 0, 1, 0)
-    titleText.BackgroundTransparency = 1
-    titleText.TextColor3 = Color3.new(1, 1, 1)
+    -- Initialize the window UI here, using self.Parent as the parent
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, self.Size.Width, 0, self.Size.Height)
+    frame.Parent = self.Parent
     
-    -- Content Area
-    local contentArea = Instance.new("ScrollingFrame")
-    contentArea.Parent = self.Frame
-    contentArea.Size = UDim2.new(1, 0, 1, -25)
-    contentArea.Position = UDim2.new(0, 0, 0, 25)
-
+    -- Store the frame in the window object for further manipulation
+    self.Frame = frame
+    
     return self
 end
 
-function Window:AddButton(text, callback)
-    local ButtonModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Button.lua")
-    ButtonModule.Create(self.Frame, text, callback)
+function WindowModule:AddButton(text, callback)
+    -- Create a button and add it to self.Elements
+    local button = Instance.new("TextButton")
+    button.Text = text
+    button.Size = UDim2.new(0, 100, 0, 50) -- Example size
+    button.Parent = self.Frame
+    button.MouseButton1Click:Connect(callback)
+    table.insert(self.Elements, button)
+    return button
 end
 
-function Window:AddToggle(text, defaultState, callback)
-    local ToggleModule = safeLoadModule("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Components/Toggle.lua")
-    ToggleModule.Create(self.Frame, text, defaultState, callback)
+function WindowModule:AddToggle(text, defaultState, callback)
+    -- Create a toggle and add it to self.Elements
+    local toggle = Instance.new("TextButton")
+    toggle.Text = text
+    toggle.Size = UDim2.new(0, 100, 0, 50) -- Example size
+    toggle.Parent = self.Frame
+    toggle.MouseButton1Click:Connect(function()
+        defaultState = not defaultState
+        callback(defaultState)
+    end)
+    table.insert(self.Elements, toggle)
+    return toggle
 end
 
-function Window:Destroy()
-    self.Frame:Destroy()
-    for i, v in ipairs(getmetatable(Window).Windows) do
-        if v == self then
-            table.remove(getmetatable(Window).Windows, i)
-            break
-        end
+function WindowModule:Destroy()
+    -- Clean up all elements of the window
+    print("Destroying window:", self.Title)
+    if self.Frame then
+        self.Frame:Destroy()
     end
+    self.Elements = nil
 end
 
-return Window
+return WindowModule
