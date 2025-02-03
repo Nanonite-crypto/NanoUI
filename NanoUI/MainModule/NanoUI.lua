@@ -30,13 +30,12 @@ function NanoUI.New(parent, config)
 
     instance = {
         Windows = {},
-        ScreenGui = screenGui,
-        NewWindow = function(self, windowConfig)
+        CreateWindow = function(self, windowConfig)
             if not WindowModule then
                 print("WindowModule is not loaded.")
                 return nil
             end
-            local window = WindowModule.New(self.ScreenGui, windowConfig)
+            local window = WindowModule.New(screenGui, windowConfig)
             if not window then
                 print("Failed to create window.")
                 return nil
