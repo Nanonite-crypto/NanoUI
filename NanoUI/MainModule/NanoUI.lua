@@ -30,7 +30,7 @@ end
 
 -- API Exposure
 function NanoUI.NewWindow(config)
-    local window = WindowModule.New(ScreenGui, config)  -- Set ScreenGui as the parent
+    local window = WindowModule.Neww(config)  -- Set ScreenGui as the parent
     table.insert(instance.Windows, window)
     return window
 end
