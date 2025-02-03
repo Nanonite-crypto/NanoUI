@@ -7,7 +7,7 @@ function Rayfield:CreateWindow(options)
     
     -- Create main GUI container
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "RayfieldUI"
+    ScreenGui.Name = "NanoUI"
     ScreenGui.Parent = game:GetService("CoreGui")
     
     -- Main window frame
