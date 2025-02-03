@@ -47,6 +47,9 @@ function NanoUI.new(config)
     window.BorderSizePixel = 0
     window.Parent = screenGui
 
+    -- Store the original position for later use in reopening animations.
+    self.OriginalPosition = window.Position
+
     -- Topbar with title label
     local topbar = Instance.new("Frame")
     topbar.Name = "Topbar"
@@ -488,15 +491,23 @@ end
 
 -- Reopen the window if it was closed.
 function NanoUI:Reopen()
-    --print("WINDOW_STATE: ", self.WindowState)
     if self.WindowState == "closed" then
         self.Window.Visible = true
+        
+        -- Set the window to the "closed" off-screen state first.
+        -- Matching your close tween, we assume BackgroundTransparency was set to 1
+        -- and the position was moved offscreen (for example, off the bottom)
+        self.Window.Position = UDim2.new(self.Window.Position.X.Scale, self.Window.Position.X.Offset, 1, 0)
+        self.Window.BackgroundTransparency = 1
+        
+        -- Create an "open" tween that returns the window to its original (centered) position
+        local openTween = TweenService:Create(self.Window, self.AnimationConfig.maximize, {
+            Position = self.OriginalPosition,  -- center it
+            BackgroundTransparency = 0         -- restore original transparency
+        })
+        openTween:Play()
+        
         self.WindowState = "open"
-        --rint("Trying to reopen the window..")
-        local tween = TweenService:Create(self.Window, self.AnimationConfig.maximize, {BackgroundTransparency = 0})
-        --print("almost")
-        tween:Play()
-        --print("Done.")
     end
 end
 
