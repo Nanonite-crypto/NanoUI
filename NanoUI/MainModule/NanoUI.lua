@@ -5,7 +5,7 @@ local ToggleModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nanonite-crypto/NanoUI/refs/heads/main/NanoUI/Themes/ThemeManager.lua"))()
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NanoUIScreen"
+ScreenGui.Name = "NanoUIScreen 2"
 ScreenGui.DisplayOrder = 1
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
